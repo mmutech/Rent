@@ -20,16 +20,6 @@ class UserSeeder extends Seeder
         User::factory()->tenant()->count(20)->create();
 
         User::factory()->agent()->count(5)->create();
-
-        User::factory()->count(20)->create();
-
-        User::factory()->verified()->create();
-
-        User::factory()->inactive()->create();
-
-        User::factory()->withTwoFactor()->create();
-
-        User::factory()->verified()->active()->count(10)->create();
-
+        
     }
 }
