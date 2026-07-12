@@ -16,7 +16,6 @@ new class extends Component
     public ?string $state = null;
     public ?string $zip_code = null;
     
-    public int $total_properties = 0;
     public int $total_units = 0;
     
     public ?string $description = null;

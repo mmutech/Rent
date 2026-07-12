@@ -14,7 +14,7 @@ new class extends Component
 {
     use WithFileUploads;
 
-    public ?Unit $unit = null;
+    public Unit $unit;
     
     // Unit fields
     public string $title = '';
@@ -25,7 +25,7 @@ new class extends Component
     public ?int $kitchens = null;
     public ?int $living_rooms = null;
     public ?int $parking_spaces = null;
-    public string $status = 'available';
+    public string $status = 'Available';
 
     public ?int $compound_id = null;
     public ?int $property_id = null;
@@ -51,7 +51,6 @@ new class extends Component
             'kitchens' => ['required', 'integer', 'min:0'],
             'living_rooms' => ['required', 'integer', 'min:0'],
             'parking_spaces' => ['required', 'integer', 'min:0'],
-            'status' => ['required', 'string', 'in:available,sold,rented,under_construction'],
             'compound_id' => ['nullable', 'exists:compounds,id'],
             'property_id' => ['nullable', 'exists:properties,id'],
             'images.*' => ['nullable', 'image', 'max:2048'],
@@ -71,8 +70,6 @@ new class extends Component
             'kitchens.required' => 'Number of kitchens is required.',
             'living_rooms.required' => 'Number of living rooms is required.',
             'parking_spaces.required' => 'Number of parking spaces is required.',
-            'status.required' => 'Status is required.',
-            'status.in' => 'Invalid status selected.',
             'compound_id.exists' => 'Selected compound does not exist.',
             'property_id.exists' => 'Selected property does not exist.',
             'images.*.image' => 'Each file must be an image.',
@@ -81,16 +78,12 @@ new class extends Component
         ];
     }
 
-    public function mount($property)
+    public function mount(Unit $unit)
     {
         $user = Auth::user();
         
-        if (!$property) {
-            abort(404, 'Unit not found.');
-        }
-        
         // Load the unit with its images
-        $this->unit = Unit::with('images')->findOrFail($property);
+        $this->unit = Unit::with('images')->findOrFail($unit->id);
         
         // Check authorization
         if ($user->id !== $this->unit->created_by && !$user->hasRole('Admin')) {
@@ -156,11 +149,12 @@ new class extends Component
         return Storage::url($path);
     }
 
-    public function updateunit(): void
+    public function updateUnit(): void
     {
         $validated = $this->validate();
         $validated['updated_by'] = Auth::id();
 
+        // dd($validated);
         DB::transaction(function () use ($validated) {
             // Update the unit
             $this->unit->update($validated);
@@ -279,7 +273,7 @@ new class extends Component
     <div class="flex flex-col gap-4 rounded-xl border border-neutral-200 p-4 dark:border-neutral-700">
         <flux:heading size="lg">Property Details</flux:heading>
 
-        <form wire:submit.prevent="updateunit" class="flex flex-col gap-4">
+        <form wire:submit.prevent="updateUnit" class="flex flex-col gap-4">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 rounded-lg border border-neutral-200 p-4 dark:border-neutral-700">
                 <div>
                     <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Compound</label>
@@ -305,16 +299,6 @@ new class extends Component
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-700">
                 <flux:input wire:model.live="title" label="Title" placeholder="Enter property title" />
                 <flux:input wire:model.live="amount" label="Amount" placeholder="Enter property amount" type="number" step="0.01" />
-                
-                <div>
-                    <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Status</label>
-                    <select wire:model.live="status" class="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 dark:border-neutral-600 dark:bg-zinc-800">
-                        <option value="available">Available</option>
-                        <option value="sold">Sold</option>
-                        <option value="rented">Rented</option>
-                        <option value="under_construction">Under Construction</option>
-                    </select>
-                </div>
                 
                 <flux:input wire:model.live="bedrooms" label="Bedrooms" placeholder="Enter number of bedrooms" type="number" />
                 <flux:input wire:model.live="bathrooms" label="Bathrooms" placeholder="Enter number of bathrooms" type="number" />

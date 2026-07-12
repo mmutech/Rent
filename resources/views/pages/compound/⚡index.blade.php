@@ -59,6 +59,7 @@ new class extends Component
                 fn ($query) => $query->where('is_active', $this->status)
             )
             ->orderBy($this->sortField, $this->sortDirection)
+            ->latest()
             ->paginate(10);
     }
 

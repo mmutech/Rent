@@ -57,6 +57,7 @@ new class extends Component
                 fn ($query) => $query->where('status', $this->status)
             )
             ->orderBy($this->sortField, $this->sortDirection)
+            ->latest()
             ->paginate(10);
     }
 

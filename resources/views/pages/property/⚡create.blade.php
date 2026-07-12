@@ -49,7 +49,7 @@ new class extends Component
             'status' => ['required', 'string', 'in:available,sold,rented,under_construction'],
             'compound_id' => ['nullable', 'exists:compounds,id'],
             'property_id' => ['nullable', 'exists:properties,id'],
-            'images.*' => ['nullable', 'image', 'max:1024'], // 1MB max per image
+            'images.*' => ['nullable', 'image', 'max:2048'], // 1MB max per image
             'images' => ['nullable', 'array', 'max:10'], // Max 10 images
         ];
     }
