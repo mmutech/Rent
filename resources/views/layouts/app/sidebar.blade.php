@@ -24,6 +24,21 @@
                     <flux:sidebar.item icon="home-modern" :href="route('property.index')" :current="request()->routeIs('property.index')" wire:navigate>
                         {{ __('Properties') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="user-group" :href="route('property.index')" :current="request()->routeIs('property.index')" wire:navigate>
+                        {{ __('Tenants') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="calendar-days" :href="route('property.index')" :current="request()->routeIs('property.index')" wire:navigate>
+                        {{ __('Bookings') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="banknotes" :href="route('property.index')" :current="request()->routeIs('property.index')" wire:navigate>
+                        {{ __('Payments') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="user-circle" :href="route('property.index')" :current="request()->routeIs('property.index')" wire:navigate>
+                        {{ __('Agents') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="wrench-screwdriver" :href="route('property.index')" :current="request()->routeIs('property.index')" wire:navigate>
+                        {{ __('Maintenance Request') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 
