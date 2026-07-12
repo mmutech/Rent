@@ -43,7 +43,6 @@ new class extends Component
         $this->city = $compound->city;
         $this->state = $compound->state;
         $this->zip_code = $compound->zip_code;
-        $this->total_properties = $compound->total_properties;
         $this->total_units = $compound->total_units;
         $this->description = $compound->description;
         $this->google_map_url = $compound->google_map_url;
@@ -71,8 +70,7 @@ new class extends Component
             'google_map_url' => ['nullable', 'url'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
-            
-            'total_properties' => ['required', 'integer', 'min:0'],
+
             'total_units' => ['required', 'integer', 'min:0'],
             
             'fence_walled' => ['boolean'],
@@ -143,7 +141,6 @@ new class extends Component
                 <flux:input wire:model="city" label="City" placeholder="Enter compound city" />
                 <flux:input wire:model="state" label="State" placeholder="Enter compound state" />
                 <flux:input wire:model="zip_code" label="Zip Code" placeholder="Enter compound zip code" />
-                <flux:input wire:model="total_properties" label="Total Properties" placeholder="Enter total properties" type="number" />
                 <flux:input wire:model="total_units" label="Total Units" placeholder="Enter total units" type="number" />
             </div>
 

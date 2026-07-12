@@ -11,7 +11,6 @@ class Property extends Model
     use HasFactory;
 
     protected $fillable = [
-        'compound_id',
         'name',
         'description',
         'created_by',
@@ -21,10 +20,5 @@ class Property extends Model
     public function unit()
     {
         return $this->hasMany(Unit::class);
-    }
-
-    public function compound()
-    {
-        return $this->belongsTo(Compound::class);
     }
 }

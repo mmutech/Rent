@@ -18,6 +18,7 @@ class UnitFactory extends Factory
     public function definition(): array
     {
         return [
+            'compound_id' => $this->faker->numberBetween(1, 5),
             'property_id' => $this->faker->numberBetween(1, 5),
             'title' => $this->faker->unique()->word(),
             'description' => $this->faker->sentence(),

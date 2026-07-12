@@ -22,7 +22,6 @@ return new class extends Migration
             $table->boolean('cctv')->default(false);
             $table->boolean('street_lights')->default(false);
             $table->boolean('playground')->default(false);
-            $table->integer('total_properties');
             $table->integer('total_units');
             $table->decimal('latitude')->nullable();
             $table->decimal('longitude')->nullable();

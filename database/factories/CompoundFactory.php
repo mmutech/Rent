@@ -27,7 +27,6 @@ class CompoundFactory extends Factory
             'cctv' => $this->faker->boolean(),
             'street_lights' => $this->faker->boolean(),
             'playground' => $this->faker->boolean(),
-            'total_properties' => $this->faker->numberBetween(1, 100),
             'total_units' => $this->faker->numberBetween(1, 1000),
             'latitude' => $this->faker->latitude(),
             'longitude' => $this->faker->longitude(),

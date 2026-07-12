@@ -14,7 +14,6 @@ new class extends Component
     public ?string $zip_code = null;
 
     // Consider removing these if they will be calculated automatically
-    public int $total_properties = 0;
     public int $total_units = 0;
 
     public ?string $description = null;
@@ -44,8 +43,7 @@ new class extends Component
             'google_map_url' => ['nullable', 'url'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
-
-            'total_properties' => ['required', 'integer', 'min:0'],
+            
             'total_units' => ['required', 'integer', 'min:0'],
 
             'fence_walled' => ['boolean'],
@@ -113,7 +111,6 @@ new class extends Component
                 <flux:input wire:model.live="city" label="City" placeholder="Enter compound city" />
                 <flux:input wire:model.live="state" label="State" placeholder="Enter compound state" />
                 <flux:input wire:model.live="zip_code" label="Zip Code" placeholder="Enter compound zip code" />
-                <flux:input wire:model.live="total_properties" label="Total Properties" placeholder="Enter total properties" type="number" />
                 <flux:input wire:model.live="total_units" label="Total Units" placeholder="Enter total units" type="number" />
             </div>
 

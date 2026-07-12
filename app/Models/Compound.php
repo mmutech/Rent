@@ -21,7 +21,6 @@ class Compound extends Model
         'cctv',
         'street_lights',
         'playground',
-        'total_properties',
         'total_units',
         'latitude',
         'longitude',
@@ -35,9 +34,9 @@ class Compound extends Model
         'updated_by'
     ];
 
-    public function properties()
+    public function unit()
     {
-        return $this->hasMany(Property::class);
+        return $this->hasMany(Unit::class);
     }
 
     public function createdBy()

@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('properties', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('compound_id');
             $table->string('name');
             $table->text('description')->nullable();
             $table->integer('created_by');

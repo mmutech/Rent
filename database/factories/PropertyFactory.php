@@ -18,7 +18,6 @@ class PropertyFactory extends Factory
     public function definition(): array
     {
         return [
-            'compound_id' => $this->faker->numberBetween(1, 5),
             'name' => $this->faker->randomElement([
                 'Plaza',
                 'Studio Apartment',

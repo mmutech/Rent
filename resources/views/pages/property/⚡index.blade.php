@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Compound;
+use App\Models\Unit;
 use Flux\Flux;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -10,16 +10,16 @@ new class extends Component
     use WithPagination;
 
     public string $search = '';
-    public ?int $status = null;
-    public string $sortField = 'name';
+    public string $status = '';
+    public string $sortField = 'title';
     public string $sortDirection = 'asc';
 
-    public ?Compound $selectedCompound = null;
+    public ?Unit $selectedUnit = null;
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'status' => ['except' => null],
-        'sortField' => ['except' => 'name'],
+        'status' => ['except' => ''],
+        'sortField' => ['except' => 'title'],
         'sortDirection' => ['except' => 'asc'],
     ];
 
@@ -43,20 +43,18 @@ new class extends Component
         }
     }
 
-    public function getCompoundsProperty()
+    public function getUnitsProperty()
     {
-        return Compound::query()
+        return Unit::with(['compound', 'property'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('name', 'like', "%{$this->search}%")
-                        ->orWhere('address', 'like', "%{$this->search}%")
-                        ->orWhere('city', 'like', "%{$this->search}%")
-                        ->orWhere('state', 'like', "%{$this->search}%");
+                    $q->where('title', 'like', "%{$this->search}%")
+                        ->orWhere('amount', 'like', "%{$this->search}%");
                 });
             })
             ->when(
-                ! is_null($this->status),
-                fn ($query) => $query->where('is_active', $this->status)
+                $this->status !== '',
+                fn ($query) => $query->where('status', $this->status)
             )
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate(10);
@@ -70,59 +68,60 @@ new class extends Component
 
     public function confirmDelete(int $id): void
     {
-        $this->selectedCompound = Compound::findOrFail($id);
-        Flux::modal('delete-compound')->show();
+        $this->selectedUnit = Unit::with('properties')->findOrFail($id);
+        Flux::modal('delete-unit')->show();
     }
 
     public function delete(): void
     {
-        if (! $this->selectedCompound) {
+        if (! $this->selectedUnit) {
             return;
         }
 
-        if ($this->selectedCompound->properties()->exists()) {
+        if ($this->selectedUnit->properties()->exists()) {
             session()->flash(
                 'error',
-                'This compound contains properties and cannot be deleted.'
+                'This unit contains properties and cannot be deleted.'
             );
 
-            Flux::modal('delete-compound')->close();
+            Flux::modal('delete-unit')->close();
             return;
         }
 
-        $this->selectedCompound->delete();
-        Flux::modal('delete-compound')->close();
+        $this->selectedUnit->delete();
+        Flux::modal('delete-unit')->close();
 
         session()->flash(
             'success',
-            'Compound deleted successfully.'
+            'Unit deleted successfully.'
         );
 
-        $this->reset('selectedCompound');
+        $this->reset('selectedUnit');
         $this->resetPage();
     }
 };
-
 ?>
+
+<!-- Your view remains largely the same, just ensure to update the status display -->
 
 <div class="flex h-full w-full flex-1 flex-col gap-4">
     <!-- Header -->
     <div class="flex flex-col gap-4 rounded-xl border border-neutral-200 p-4 dark:border-neutral-700 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <flux:heading size="xl" class="flex items-center gap-2">
-                Compounds
+                Property
                 <span class="text-sm font-normal text-neutral-500 dark:text-neutral-400">
-                    ({{ $this->compounds->total() }})
+                    ({{ $this->units->total() }})
                 </span>
             </flux:heading>
             <flux:text class="mt-1">
-                Manage all compounds where properties are located.
+                Manage all property where properties are located.
             </flux:text>
         </div>
 
         <div class="flex items-center gap-2">
-            <flux:button variant="primary" icon="plus" :href="route('compound.create')" size="sm">
-                New Compound
+            <flux:button variant="primary" icon="plus" size="sm" :href="route('property.create')">
+                New Property
             </flux:button>
         </div>
     </div>
@@ -135,9 +134,9 @@ new class extends Component
         <div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800/50">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Total Compounds</p>
+                    <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Total Units</p>
                     <p class="mt-1 text-2xl font-semibold text-neutral-900 dark:text-white">
-                        {{ \App\Models\Compound::count() }}
+                        {{ \App\Models\Unit::count() }}
                     </p>
                 </div>
                 <div class="rounded-full bg-blue-100 p-3 dark:bg-blue-900/30">
@@ -151,9 +150,9 @@ new class extends Component
         <div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800/50">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Active</p>
+                    <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Available</p>
                     <p class="mt-1 text-2xl font-semibold text-neutral-900 dark:text-white">
-                        {{ \App\Models\Compound::where('is_active', true)->count() }}
+                        {{ \App\Models\Unit::where('status', 'Available')->count() }}
                     </p>
                 </div>
                 <div class="rounded-full bg-green-100 p-3 dark:bg-green-900/30">
@@ -167,9 +166,9 @@ new class extends Component
         <div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800/50">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Inactive</p>
+                    <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Reserved</p>
                     <p class="mt-1 text-2xl font-semibold text-neutral-900 dark:text-white">
-                        {{ \App\Models\Compound::where('is_active', false)->count() }}
+                        {{ \App\Models\Unit::where('status', 'Reserved')->count() }}
                     </p>
                 </div>
                 <div class="rounded-full bg-red-100 p-3 dark:bg-red-900/30">
@@ -183,9 +182,9 @@ new class extends Component
         <div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800/50">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Total Unit</p>
+                    <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Total Occupied</p>
                     <p class="mt-1 text-2xl font-semibold text-neutral-900 dark:text-white">
-                        {{ number_format(\App\Models\Compound::sum('total_units')) }}
+                        {{ \App\Models\Unit::where('status', 'Occupied')->count() }}
                     </p>
                 </div>
                 <div class="rounded-full bg-purple-100 p-3 dark:bg-purple-900/30">
@@ -205,7 +204,7 @@ new class extends Component
                 <flux:input
                     wire:model.live.debounce.300ms="search"
                     icon="magnifying-glass"
-                    placeholder="Search by name, address, city, or state..."
+                    placeholder="Search by title, amount..."
                     class="w-full"
                 />
             </div>
@@ -213,8 +212,10 @@ new class extends Component
             <div class="w-full sm:w-48">
                 <flux:select wire:model.live="status">
                     <option value="">All Status</option>
-                    <option value="1">Active</option>
-                    <option value="0">Inactive</option>
+                    <option value="Available">Available</option>
+                    <option value="Reserved">Reserved</option>
+                    <option value="Occupied">Occupied</option>
+                    <option value="Under_Maintenance">Under Maintenance</option>
                 </flux:select>
             </div>
 
@@ -244,33 +245,33 @@ new class extends Component
                             </button>
                         </th>
                         <th class="px-4 py-3">
-                            <button wire:click="sortBy('name')" class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-300">
-                                Name
-                                @if($sortField === 'name')
+                            <button wire:click="sortBy('compound_id')" class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-300">
+                                Type
+                                @if($sortField === 'compound_id')
                                     <span class="text-xs">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                                 @endif
                             </button>
                         </th>
                         <th class="px-4 py-3">
-                            <button wire:click="sortBy('address')" class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-300">
-                                Address
-                                @if($sortField === 'address')
-                                    <span class="text-xs">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                                @endif
-                            </button>
-                        </th>
-                        <th class="px-4 py-3">
-                            <button wire:click="sortBy('city')" class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-300">
-                                City
-                                @if($sortField === 'city')
+                            <button wire:click="sortBy('title')" class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-300">
+                                Title
+                                @if($sortField === 'title')
                                     <span class="text-xs">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                                 @endif
                             </button>
                         </th>
                         <th class="px-4 py-3 text-center">
-                            <button wire:click="sortBy('total_units')" class="flex items-center justify-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-300">
-                                Units
-                                @if($sortField === 'total_units')
+                            <button wire:click="sortBy('bedrooms')" class="flex items-center justify-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-300">
+                                Bedrooms
+                                @if($sortField === 'bedrooms')
+                                    <span class="text-xs">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                                @endif
+                            </button>
+                        </th>
+                        <th class="px-4 py-3">
+                            <button wire:click="sortBy('amount')" class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-300">
+                                Amount
+                                @if($sortField === 'amount')
                                     <span class="text-xs">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                                 @endif
                             </button>
@@ -281,7 +282,7 @@ new class extends Component
                 </thead>
 
                 <tbody class="divide-y divide-neutral-200 bg-white dark:divide-neutral-700 dark:bg-neutral-900/50">
-                    @forelse ($this->compounds as $compound)
+                    @forelse ($this->units as $unit)
                     <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
                         <td class="whitespace-nowrap px-4 py-3 text-sm text-neutral-500 dark:text-neutral-400">
                             {{ $loop->iteration }}
@@ -295,34 +296,49 @@ new class extends Component
                                 </div>
                                 <div>
                                     <div class="font-medium text-neutral-900 dark:text-white">
-                                        {{ $compound->name }}
+                                        {{ $unit->compound?->name ?? 'N/A' }}
                                     </div>
-                                    @if($compound->landmark)
+                                    @if($unit->property?->name)
                                         <div class="text-xs text-neutral-500 dark:text-neutral-400">
-                                            {{ $compound->landmark }}
+                                            {{ $unit->property->name }}
                                         </div>
                                     @endif
                                 </div>
                             </div>
                         </td>
                         <td class="px-4 py-3 text-sm text-neutral-700 dark:text-neutral-300">
-                            {{ Str::limit($compound->address, 30) }}
-                        </td>
-                        <td class="px-4 py-3 text-sm text-neutral-700 dark:text-neutral-300">
-                            {{ $compound->city ?? '-' }}
+                            {{ Str::limit($unit->title, 30) }}
                         </td>
                         <td class="whitespace-nowrap px-4 py-3 text-center">
                             <span class="inline-flex items-center gap-1 text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                                {{ number_format($compound->total_units) }}
-                                @if($compound->total_units > 0)
-                                    <span class="text-xs text-neutral-400">units</span>
+                                {{ number_format($unit->bedrooms) }}
+                                @if($unit->bedrooms > 0)
+                                    <span class="text-xs text-neutral-400">Units</span>
                                 @endif
                             </span>
                         </td>
+                        <td class="px-4 py-3 text-sm text-neutral-700 dark:text-neutral-300">
+                            {{ number_format($unit->amount) }}
+                        </td>
                         <td class="whitespace-nowrap px-4 py-3 text-center">
-                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ $compound->is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' }}">
-                                <span class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full {{ $compound->is_active ? 'bg-green-400' : 'bg-red-400' }}"></span>
-                                {{ $compound->is_active ? 'Active' : 'Inactive' }}
+                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium 
+                                {{ match($unit->status) {
+                                    'Available' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+                                    'Reserved' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+                                    'Occupied' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+                                    'Under_Maintenance' => 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+                                    default => 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
+                                } }}">
+                                <span class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full 
+                                    {{ match($unit->status) {
+                                        'Available' => 'bg-green-400',
+                                        'Reserved' => 'bg-yellow-400',
+                                        'Occupied' => 'bg-blue-400',
+                                        'Under_Maintenance' => 'bg-red-400',
+                                        default => 'bg-gray-400',
+                                    } }}">
+                                </span>
+                                {{ str_replace('_', ' ', $unit->status) }}
                             </span>
                         </td>
                         <td class="whitespace-nowrap px-4 py-3 text-center">
@@ -330,19 +346,19 @@ new class extends Component
                                 <flux:button size="sm" icon="ellipsis-vertical" variant="ghost" />
 
                                 <flux:menu>
-                                    <flux:menu.item icon="eye" :href="route('compound.show', $compound)">
+                                    <flux:menu.item icon="eye" :href="route('property.show', $unit)">
                                         View Details
                                     </flux:menu.item>
-                                    <flux:menu.item icon="pencil-square" :href="route('compound.edit', $compound)">
-                                        Edit Compound
+                                    <flux:menu.item icon="pencil-square" :href="route('property.edit', $unit)">
+                                        Edit Property
                                     </flux:menu.item>
                                     <flux:menu.separator />
                                     <flux:menu.item 
                                         variant="danger" 
                                         icon="trash" 
-                                        wire:click="confirmDelete({{ $compound->id }})"
+                                        wire:click="confirmDelete({{ $unit->id }})"
                                     >
-                                        Delete Compound
+                                        Delete Property
                                     </flux:menu.item>
                                 </flux:menu>
                             </flux:dropdown>
@@ -356,7 +372,7 @@ new class extends Component
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                                     </svg>
                                     <p class="text-sm text-neutral-500 dark:text-neutral-400">
-                                        No compounds found matching your filters.
+                                        No units found matching your filters.
                                     </p>
                                     <flux:button variant="ghost" wire:click="clearFilters" size="sm">
                                         Clear filters
@@ -371,12 +387,12 @@ new class extends Component
 
         <!-- Pagination -->
         <div class="border-t border-neutral-200 px-4 py-3 dark:border-neutral-700">
-            {{ $this->compounds->links() }}
+            {{ $this->units->links() }}
         </div>
     </div>
 
     <!-- Delete Modal -->
-    <flux:modal name="delete-compound" class="md:w-96">
+    <flux:modal title="delete-unit" class="md:w-96">
         <div class="space-y-6">
             <div class="flex items-start gap-4">
                 <div class="flex-shrink-0 rounded-full bg-red-100 p-2 dark:bg-red-900/30">
@@ -386,11 +402,11 @@ new class extends Component
                 </div>
                 <div>
                     <flux:heading size="lg">
-                        Delete Compound
+                        Delete Unit
                     </flux:heading>
                     <flux:text class="mt-2">
                         Are you sure you want to delete
-                        <strong class="text-neutral-900 dark:text-white">{{ $selectedCompound?->name }}</strong>?
+                        <strong class="text-neutral-900 dark:text-white">{{ $selectedUnit?->title }}</strong>?
                     </flux:text>
                     <div class="mt-2 rounded-lg bg-red-50 p-3 dark:bg-red-900/20">
                         <flux:text class="text-sm text-red-600 dark:text-red-400">
@@ -403,7 +419,7 @@ new class extends Component
             <div class="flex justify-end gap-2">
                 <flux:button
                     variant="ghost"
-                    x-on:click="$flux.modal('delete-compound').close()"
+                    x-on:click="$flux.modal('delete-unit').close()"
                 >
                     Cancel
                 </flux:button>
@@ -415,7 +431,7 @@ new class extends Component
                     wire:loading.attr="disabled"
                 >
                     <span wire:loading.remove>
-                        Delete Compound
+                        Delete unit
                     </span>
                     <span wire:loading>
                         Deleting...

@@ -11,6 +11,7 @@ class Unit extends Model
     use HasFactory;
 
     protected $fillable = [
+        'compound_id',
         'property_id',
         'title',
         'description',
@@ -25,8 +26,28 @@ class Unit extends Model
         'updated_by'
     ];
 
-    public function category()
+    public function property()
     {
-        return $this->belongsTo(Property::class, 'category_id');
+        return $this->belongsTo(Property::class, 'property_id');
+    }
+
+    public function compound()
+    {
+        return $this->belongsTo(Compound::class, 'compound_id');
+    }
+
+    public function images()
+    {
+        return $this->hasMany(PropertyImage::class, 'property_id');
+    }
+
+    public function primaryImage()
+    {
+        return $this->hasOne(PropertyImage::class, 'property_id')->where('is_primary', true);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

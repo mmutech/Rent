@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('units', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('compound_id');
             $table->foreignId('property_id');
             $table->string('title');
             $table->text('description')->nullable();

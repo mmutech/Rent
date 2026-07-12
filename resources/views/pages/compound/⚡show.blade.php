@@ -70,23 +70,7 @@ new class extends Component
     <x-flash-message />
 
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800/50">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Total Properties</p>
-                    <p class="mt-1 text-2xl font-semibold text-neutral-900 dark:text-white">
-                        {{ number_format($compound->total_properties) }}
-                    </p>
-                </div>
-                <div class="rounded-full bg-blue-100 p-3 dark:bg-blue-900/30">
-                    <svg class="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                    </svg>
-                </div>
-            </div>
-        </div>
-
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800/50">
             <div class="flex items-center justify-between">
                 <div>
