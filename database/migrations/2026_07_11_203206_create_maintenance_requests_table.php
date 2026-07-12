@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('maintenance_requests', function (Blueprint $table) {
             $table->id();
             $table->string('request_number')->unique();
-            $table->foreignId('property_id');
+            $table->foreignId('unit_id');
             $table->foreignId('user_id');
             $table->enum('request_type', ['Plumbing', 'Electrical', 'Other'])->default('Other');
             $table->text('description');

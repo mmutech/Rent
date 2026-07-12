@@ -31,6 +31,7 @@ return new class extends Migration
             $table->string('city')->nullable();
             $table->string('state')->nullable();
             $table->string('zip_code')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->integer('created_by');
             $table->integer('updated_by')->nullable();
             $table->timestamps();

@@ -13,7 +13,7 @@ class Booking extends Model
     protected $fillable = [
         'booking_reference',
         'user_id',
-        'property_id',
+        'unit_id',
         'agent_id',
         'start_date',
         'end_date',
@@ -26,9 +26,9 @@ class Booking extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function property()
+    public function unit()
     {
-        return $this->belongsTo(Property::class);
+        return $this->belongsTo(Unit::class);
     }
 
     public function agent()

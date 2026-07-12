@@ -19,17 +19,33 @@ class PropertyFactory extends Factory
     {
         return [
             'compound_id' => $this->faker->numberBetween(1, 5),
-            'category_id' => $this->faker->numberBetween(1, 5),
-            'title' => $this->faker->unique()->word(),
+            'name' => $this->faker->randomElement([
+                'Plaza',
+                'Studio Apartment',
+                'Duplex',
+                'Self Contain',
+                'Flat',
+                'Mini Flat',
+                'Penthouse',
+                'Bungalow',
+                'Terrace House',
+                'Semi-Detached Duplex',
+                'Detached Duplex',
+                'Mansion',
+                'Villa',
+                'Apartment',
+                'Block of Flats',
+                'Office Complex',
+                'Shopping Complex',
+                'Warehouse',
+                'Hostel',
+                'Guest House',
+                'Serviced Apartment',
+                'Commercial Building',
+                'Mixed-Use Building',
+            ]),
             'description' => $this->faker->sentence(),
-            'amount' => $this->faker->randomFloat(2, 100, 1000),
-            'bedrooms' => $this->faker->numberBetween(1, 5),
-            'bathrooms' => $this->faker->numberBetween(1, 3),
-            'kitchens' => $this->faker->numberBetween(1, 2),
-            'living_rooms' => $this->faker->numberBetween(1, 2),
-            'parking_spaces' => $this->faker->numberBetween(0, 2),
-            'status' => $this->faker->randomElement(['Available', 'Reserved', 'Occupied', 'Under_Maintenance']),
-            'created_by' => $this->faker->numberBetween(1, 10),
+            'created_by' => 1, // Assuming the admin user has ID 1
         ];
     }
 }

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('booking_reference')->unique();
             $table->foreignId('user_id');
-            $table->foreignId('property_id');
+            $table->foreignId('unit_id');
             $table->foreignId('agent_id')->nullable();
             $table->date('start_date');
             $table->date('end_date');

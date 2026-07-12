@@ -12,7 +12,7 @@ class MaintenanceRequest extends Model
 
     protected $fillable = [
         'request_number',
-        'property_id',
+        'unit_id',
         'user_id',
         'request_type',
         'description',
@@ -22,9 +22,9 @@ class MaintenanceRequest extends Model
         'completion_date',
     ];
 
-    public function property()
+    public function unit()
     {
-        return $this->belongsTo(Property::class);
+        return $this->belongsTo(Unit::class);
     }
 
     public function user()

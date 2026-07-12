@@ -30,6 +30,7 @@ class Compound extends Model
         'city',
         'state',
         'zip_code',
+        'is_active',
         'created_by',
         'updated_by'
     ];

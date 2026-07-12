@@ -6,25 +6,27 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Property extends Model
+class Unit extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'compound_id',
-        'name',
+        'property_id',
+        'title',
         'description',
+        'amount',
+        'bedrooms',
+        'bathrooms',
+        'kitchens',
+        'living_rooms',
+        'parking_spaces',
+        'status',
         'created_by',
         'updated_by'
     ];
 
-    public function unit()
+    public function category()
     {
-        return $this->hasMany(Unit::class);
-    }
-
-    public function compound()
-    {
-        return $this->belongsTo(Compound::class);
+        return $this->belongsTo(Property::class, 'category_id');
     }
 }

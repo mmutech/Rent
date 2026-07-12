@@ -4,16 +4,16 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use App\Models\PropertyCategory;
+use App\Models\Unit;
 
-class PropertyCategorySeeder extends Seeder
+class UnitSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        PropertyCategory::factory()
+        Unit::factory()
             ->count(10)
             ->create();
     }

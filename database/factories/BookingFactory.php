@@ -19,7 +19,7 @@ class BookingFactory extends Factory
     {
         return [
             'user_id' => $this->faker->numberBetween(1, 10),
-            'property_id' => $this->faker->numberBetween(1, 10),
+            'unit_id' => $this->faker->numberBetween(1, 10),
             'start_date' => $this->faker->dateTimeBetween('-1 month', '+1 month'),
             'end_date' => $this->faker->dateTimeBetween('+1 month', '+2 months'),
             'status' => $this->faker->randomElement(['Pending', 'Confirmed', 'Cancelled']),

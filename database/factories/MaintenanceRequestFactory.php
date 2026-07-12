@@ -19,7 +19,7 @@ class MaintenanceRequestFactory extends Factory
     {
         return [
             'request_number' => MaintenanceRequest::generateRequestNumber(),
-            'property_id' => $this->faker->numberBetween(1, 10),
+            'unit_id' => $this->faker->numberBetween(1, 10),
             'user_id' => $this->faker->numberBetween(1, 10),
             'request_type' => $this->faker->randomElement(['Plumbing', 'Electrical', 'Other']),
             'description' => $this->faker->paragraph(),
