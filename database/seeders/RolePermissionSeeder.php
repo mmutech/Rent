@@ -108,9 +108,9 @@ class RolePermissionSeeder extends Seeder
 
         $roles = [
 
-            'admin' => Permission::pluck('name')->toArray(),
+            'Admin' => Permission::pluck('name')->toArray(),
 
-            'landlord' => [
+            'Landlord' => [
                 'view-dashboard',
 
                 'create-compound',
@@ -158,7 +158,7 @@ class RolePermissionSeeder extends Seeder
                 'view-report',
             ],
 
-            'tenant' => [
+            'Tenant' => [
                 'view-dashboard',
 
                 'view-property',
@@ -181,7 +181,7 @@ class RolePermissionSeeder extends Seeder
                 'update-next-of-kin',
             ],
 
-            'agent' => [
+            'Agent' => [
                 'view-dashboard',
 
                 'view-property',

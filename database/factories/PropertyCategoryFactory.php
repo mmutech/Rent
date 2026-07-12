@@ -20,6 +20,7 @@ class PropertyCategoryFactory extends Factory
         return [
             'name' => $this->faker->unique()->word(),
             'description' => $this->faker->sentence(),
+            'created_by' => 1, // Assuming the admin user has ID 1
         ];
     }
 }

@@ -12,7 +12,7 @@ class Payment extends Model
     use HasFactory;
 
     protected $fillable = [
-        'reference_no',
+        'reference_number',
         'booking_id',
         'user_id',
         'payment_method',
@@ -36,7 +36,7 @@ class Payment extends Model
     {
         do {
             $referenceNo = 'PAY-' . strtoupper(uniqid());
-        } while (self::where('reference_no', $referenceNo)->exists());
+        } while (self::where('reference_number', $referenceNo)->exists());
         
         return $referenceNo;
     }

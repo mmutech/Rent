@@ -21,7 +21,7 @@ class MaintenanceRequestFactory extends Factory
             'request_number' => MaintenanceRequest::generateRequestNumber(),
             'property_id' => $this->faker->numberBetween(1, 10),
             'user_id' => $this->faker->numberBetween(1, 10),
-            'request_type' => $this->faker->randomElement(['Plumbing', 'Electrical', 'General', 'Other']),
+            'request_type' => $this->faker->randomElement(['Plumbing', 'Electrical', 'Other']),
             'description' => $this->faker->paragraph(),
             'status' => $this->faker->randomElement(['Pending', 'In Progress', 'Completed']),
             'priority' => $this->faker->randomElement(['Low', 'Medium', 'High']),

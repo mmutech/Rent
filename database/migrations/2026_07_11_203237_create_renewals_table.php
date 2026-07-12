@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('renewals', function (Blueprint $table) {
             $table->id();
             $table->string('renewal_number')->unique();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('booking_id')->constrained('bookings')->onDelete('cascade');
+            $table->foreignId('user_id');
+            $table->foreignId('booking_id');
             $table->date('old_end_date');
             $table->date('new_end_date');
             $table->decimal('new_rent_amount', 8, 2);

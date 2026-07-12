@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('bookings', function (Blueprint $table) {
             $table->id();
-            $table->string('booking_reference', 10)->unique();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('property_id')->constrained('properties')->onDelete('cascade');
-            $table->foreignId('agent_id')->constrained('users')->onDelete('cascade')->nullable();
+            $table->string('booking_reference')->unique();
+            $table->foreignId('user_id');
+            $table->foreignId('property_id');
+            $table->foreignId('agent_id')->nullable();
             $table->date('start_date');
             $table->date('end_date');
             $table->decimal('total_price', 8, 2);

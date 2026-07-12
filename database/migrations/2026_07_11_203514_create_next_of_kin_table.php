@@ -13,14 +13,14 @@ return new class extends Migration
     {
         Schema::create('next_of_kin', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('user_id');
             $table->string('name');
             $table->enum('relationship', ['Spouse', 'Child', 'Parent', 'Sibling', 'Friend', 'Guardian', 'Other']);
             $table->string('phone_number');
             $table->string('email')->nullable();
             $table->string('address')->nullable();
             $table->string('identification_number');
-            $table->enum('identification_type', ['National_ID', 'Passport', 'Driver_License']);
+            $table->enum('identification_type', ['National_ID', 'Passport', 'Driver_License', 'Other']);
             $table->boolean('is_verified')->default(false);
             $table->timestamps();
         });

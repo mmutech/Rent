@@ -20,12 +20,12 @@ class NextOfKinFactory extends Factory
         return [
             'user_id' => $this->faker->numberBetween(1, 10),
             'name' => $this->faker->name(),
-            'relationship' => $this->faker->randomElement(['Parent', 'Sibling', 'Spouse', 'Friend', 'Other']),
+            'relationship' => $this->faker->randomElement(['Spouse', 'Child', 'Parent', 'Sibling', 'Friend', 'Guardian', 'Other']),
             'phone_number' => $this->faker->phoneNumber(),
             'email' => $this->faker->unique()->safeEmail(),
             'address' => $this->faker->address(),
             'identification_number' => $this->faker->unique()->numerify('ID-########'),
-            'identification_type' => $this->faker->randomElement(['Passport', 'Driver License', 'National ID', 'Other']),
+            'identification_type' => $this->faker->randomElement(['National_ID', 'Passport', 'Driver_License', 'Other']),
             'is_verified' => $this->faker->boolean(50), // 50% chance of being verified
         ];
     }

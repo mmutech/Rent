@@ -23,7 +23,7 @@ class InvoiceFactory extends Factory
             'amount' => $this->faker->randomFloat(2, 100, 1000),
             'status' => $this->faker->randomElement(['Pending', 'Paid', 'Overdue']),
             'due_date' => $this->faker->dateTimeBetween('+1 week', '+1 month'),
-            'invoice_date' => $this->faker->optional()->dateTimeBetween('+1 week', '+1 month'),
+            'invoice_date' => $this->faker->dateTimeBetween('+1 week', '+1 month'),
             'notes' => $this->faker->optional()->paragraph(),
         ];
     }
