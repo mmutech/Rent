@@ -24,7 +24,7 @@
                     <flux:sidebar.item icon="home-modern" :href="route('property.index')" :current="request()->routeIs('property.index')" wire:navigate>
                         {{ __('Properties') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="user-group" :href="route('property.index')" :current="request()->routeIs('property.index')" wire:navigate>
+                    <flux:sidebar.item icon="user-group" :href="route('tenant.index')" :current="request()->routeIs('tenant.index')" wire:navigate>
                         {{ __('Tenants') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="calendar-days" :href="route('property.index')" :current="request()->routeIs('property.index')" wire:navigate>
