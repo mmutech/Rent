@@ -27,7 +27,7 @@
                     <flux:sidebar.item icon="user-group" :href="route('tenant.index')" :current="request()->routeIs('tenant.index')" wire:navigate>
                         {{ __('Tenants') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="calendar-days" :href="route('property.index')" :current="request()->routeIs('property.index')" wire:navigate>
+                    <flux:sidebar.item icon="calendar-days" :href="route('booking.index')" :current="request()->routeIs('booking.index')" wire:navigate>
                         {{ __('Bookings') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="banknotes" :href="route('property.index')" :current="request()->routeIs('property.index')" wire:navigate>

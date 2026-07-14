@@ -1,51 +1,54 @@
 <?php
 
-use App\Models\Unit;
-use App\Models\Compound;
 use App\Models\Property;
+use App\Models\Compound;
+use App\Models\PropertyCategory;
 use App\Models\PropertyImage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 new class extends Component
 {
-    public ?Unit $unit = null;
+    use AuthorizesRequests; 
+
+    public Property $property;
     
     // For dropdowns (if needed for related data)
     public $compound = null;
-    public $property = null;
+    public $category = null;
     public $images = [];
     public $primaryImage = null;
 
-    public function mount($property)
+    public function mount(Property $property)
     {
         $user = Auth::user();
         
-        if (!$property) {
-            abort(404, 'Property not found.');
+        if (!auth()->user()->hasPermissionTo('view-property')) {
+            abort(403);
         }
         
         // Load the unit with its images and relationships
-        $this->unit = Unit::with(['images', 'compound', 'property', 'primaryImage', 'createdBy'])
-            ->findOrFail($property);
+        $this->property = Property::with(['images', 'compound', 'category', 'primaryImage', 'createdBy'])
+            ->findOrFail($property->id);
         
         // Check if user can view this unit
-        if ($user->id !== $this->unit->created_by && !$user->hasRole('Admin')) {
+        if ($user->id !== $this->property->created_by && !$user->hasRole('Admin')) {
             abort(403, 'You are not authorized to view this unit.');
         }
 
         // Load related data
-        if ($this->unit->compound_id) {
-            $this->compound = Compound::find($this->unit->compound_id);
+        if ($this->property->compound_id) {
+            $this->compound = Compound::find($this->property->compound_id);
         }
         
-        if ($this->unit->property_id) {
-            $this->property = Property::find($this->unit->property_id);
+        if ($this->property->category_id) {
+            $this->category = PropertyCategory::find($this->property->category_id);
         }
 
         // Load images with proper URLs
-        $this->images = $this->unit->images->map(function($image) {
+        $this->images = $this->property->images->map(function($image) {
             return [
                 'id' => $image->id,
                 'image_path' => $image->image_path,
@@ -55,7 +58,7 @@ new class extends Component
         })->toArray();
 
         // Get primary image
-        $primaryImage = $this->unit->images->where('is_primary', true)->first();
+        $primaryImage = $this->property->images->where('is_primary', true)->first();
         if ($primaryImage) {
             $this->primaryImage = [
                 'id' => $primaryImage->id,
@@ -125,13 +128,13 @@ new class extends Component
 
 <div class="flex h-full w-full flex-1 flex-col gap-4">
     <!-- Header -->
-    <div class="flex items-center justify-between rounded-xl border border-neutral-200 p-4 dark:border-neutral-700">
+    <div class="flex flex-col gap-4 rounded-xl border border-neutral-200 p-4 dark:border-neutral-700 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <flux:heading size="xl">{{ $unit->title }}</flux:heading>
+            <flux:heading size="xl">{{ $property->title }}</flux:heading>
             <flux:text class="mt-1 flex items-center gap-2">
                 <span>Property Details</span>
-                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-white {{ $this->getStatusColor($unit->status) }}">
-                    {{ $this->getStatusLabel($unit->status) }}
+                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-white {{ $this->getStatusColor($property->status) }}">
+                    {{ $this->getStatusLabel($property->status) }}
                 </span>
             </flux:text>
         </div>
@@ -140,7 +143,7 @@ new class extends Component
             <flux:button :href="route('property.index')" variant="ghost" icon="arrow-left" size="sm">
                 Back to Properties
             </flux:button>
-            <flux:button :href="route('property.edit', $unit->id)" variant="primary" icon="pencil-square" size="sm">
+            <flux:button :href="route('property.edit', $property->id)" variant="primary" icon="pencil-square" size="sm">
                 Edit
             </flux:button>
         </div>
@@ -157,7 +160,7 @@ new class extends Component
                     <!-- Primary Image -->
                     <div class="mb-4 overflow-hidden rounded-lg">
                         <img src="{{ $primaryImage['image_url'] }}" 
-                             alt="{{ $unit->title }}" 
+                             alt="{{ $property->title }}" 
                              class="h-[400px] w-full object-cover"
                              onerror="this.onerror=null; this.src='{{ asset('images/placeholder.jpg') }}';" />
                     </div>
@@ -198,7 +201,7 @@ new class extends Component
                     <div>
                         <flux:text class="text-sm font-medium text-neutral-500">Amount</flux:text>
                         <flux:text class="text-2xl font-bold text-blue-600">
-                            ₦{{ number_format($unit->amount, 2) }}
+                            ₦{{ number_format($property->amount, 2) }}
                         </flux:text>
                     </div>
 
@@ -208,28 +211,28 @@ new class extends Component
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <flux:text class="text-xs font-medium text-neutral-500">Bedrooms</flux:text>
-                            <flux:text class="text-sm font-semibold">{{ $unit->bedrooms ?? 'N/A' }}</flux:text>
+                            <flux:text class="text-sm font-semibold">{{ $property->bedrooms ?? 'N/A' }}</flux:text>
                         </div>
                         <div>
                             <flux:text class="text-xs font-medium text-neutral-500">Bathrooms</flux:text>
-                            <flux:text class="text-sm font-semibold">{{ $unit->bathrooms ?? 'N/A' }}</flux:text>
+                            <flux:text class="text-sm font-semibold">{{ $property->bathrooms ?? 'N/A' }}</flux:text>
                         </div>
                         <div>
                             <flux:text class="text-xs font-medium text-neutral-500">Kitchens</flux:text>
-                            <flux:text class="text-sm font-semibold">{{ $unit->kitchens ?? 'N/A' }}</flux:text>
+                            <flux:text class="text-sm font-semibold">{{ $property->kitchens ?? 'N/A' }}</flux:text>
                         </div>
                         <div>
                             <flux:text class="text-xs font-medium text-neutral-500">Living Rooms</flux:text>
-                            <flux:text class="text-sm font-semibold">{{ $unit->living_rooms ?? 'N/A' }}</flux:text>
+                            <flux:text class="text-sm font-semibold">{{ $property->living_rooms ?? 'N/A' }}</flux:text>
                         </div>
                         <div>
                             <flux:text class="text-xs font-medium text-neutral-500">Parking Spaces</flux:text>
-                            <flux:text class="text-sm font-semibold">{{ $unit->parking_spaces ?? 'N/A' }}</flux:text>
+                            <flux:text class="text-sm font-semibold">{{ $property->parking_spaces ?? 'N/A' }}</flux:text>
                         </div>
                         <div>
                             <flux:text class="text-xs font-medium text-neutral-500">Status</flux:text>
-                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium text-white {{ $this->getStatusColor($unit->status) }}">
-                                {{ $this->getStatusLabel($unit->status) }}
+                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium text-white {{ $this->getStatusColor($property->status) }}">
+                                {{ $this->getStatusLabel($property->status) }}
                             </span>
                         </div>
                     </div>
@@ -247,7 +250,7 @@ new class extends Component
                             @endif
                             @if($property)
                                 <flux:text class="text-sm">
-                                    <span class="font-medium">Property Type:</span> {{ $property->name ?? 'N/A' }}
+                                    <span class="font-medium">Property Category:</span> {{ $property->category->name ?? 'N/A' }}
                                 </flux:text>
                             @endif
                         </div>
@@ -259,7 +262,7 @@ new class extends Component
                     <div>
                         <flux:text class="text-sm font-medium text-neutral-500">Description</flux:text>
                         <flux:text class="mt-1 text-sm">
-                            {{ $unit->description ?? 'No description provided.' }}
+                            {{ $property->description ?? 'No description provided.' }}
                         </flux:text>
                     </div>
 
@@ -268,16 +271,16 @@ new class extends Component
                     <!-- Meta Info -->
                     <div class="space-y-1">
                         <flux:text class="text-xs text-neutral-500">
-                            Created: {{ $unit->created_at ? $unit->created_at->format('M d, Y H:i') : 'N/A' }}
+                            Created: {{ $property->created_at ? $property->created_at->format('M d, Y H:i') : 'N/A' }}
                         </flux:text>
-                        @if($unit->created_by)
+                        @if($property->created_by)
                             <flux:text class="text-xs text-neutral-500">
-                                Created by: {{ $unit->createdBy?->name ?? 'Unknown' }}
+                                Created by: {{ $property->createdBy?->name ?? 'Unknown' }}
                             </flux:text>
                         @endif
-                        @if($unit->updated_at && $unit->updated_at != $unit->created_at)
+                        @if($property->updated_at && $property->updated_at != $property->created_at)
                             <flux:text class="text-xs text-neutral-500">
-                                Updated: {{ $unit->updated_at->format('M d, Y H:i') }}
+                                Updated: {{ $property->updated_at->format('M d, Y H:i') }}
                             </flux:text>
                         @endif
                     </div>

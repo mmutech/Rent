@@ -24,6 +24,32 @@ new class extends Component
         'sortDirection' => ['except' => 'asc'],
     ];
 
+    public function mount()
+    {
+        if (!auth()->user()->hasPermissionTo('view-tenant')) {
+            abort(403);
+        }
+    }
+
+    // Use a computed property instead of storing the paginator
+    public function getTenantsProperty()
+    {
+        return User::query()
+            ->with(['bookings'])
+            ->role('Tenant')
+            ->when($this->search, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('name', 'like', "%{$this->search}%")
+                        ->orWhere('email', 'like', "%{$this->search}%")
+                        ->orWhere('phone', 'like', "%{$this->search}%")
+                        ->orWhere('nin', 'like', "%{$this->search}%");
+                });
+            })
+            ->when(!is_null($this->status), fn($query) => $query->where('is_active', $this->status))
+            ->orderBy($this->sortField, $this->sortDirection)
+            ->paginate(10);
+    }
+
     public function updatingSearch(): void
     {
         $this->resetPage();
@@ -44,30 +70,6 @@ new class extends Component
         }
     }
 
-    public function getTenantUnits()
-    {
-        if (!auth()->user()->hasPermissionTo('view-tenant')) {
-            abort(403);
-        }
-
-        return User::query()
-            // ->role('Tenant')
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('name', 'like', "%{$this->search}%")
-                        ->orWhere('email', 'like', "%{$this->search}%")
-                        ->orWhere('phone', 'like', "%{$this->search}%")
-                        ->orWhere('nin', 'like', "%{$this->search}%");
-                });
-            })
-            ->when(
-                ! is_null($this->status),
-                fn ($query) => $query->where('is_active', $this->status)
-            )
-            ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate(10);
-    }
-
     public function clearFilters(): void
     {
         $this->reset('search', 'status', 'sortField', 'sortDirection');
@@ -86,10 +88,10 @@ new class extends Component
             return;
         }
 
-        if ($this->selectedTenant->tenants()->exists()) {
+        if ($this->selectedTenant->bookings()->exists()) {
             session()->flash(
                 'error',
-                'This tenant contains properties and cannot be deleted.'
+                'This tenant contains bookings and cannot be deleted.'
             );
 
             Flux::modal('delete-tenant')->close();
@@ -218,7 +220,7 @@ new class extends Component
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
                 <thead class="bg-neutral-50 dark:bg-neutral-800/50">
-                    <tr class="text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                    <tr class="text-left text-xs font-medium tracking-wider text-neutral-500 dark:text-neutral-400">
                         <th class="px-4 py-3">
                             <button wire:click="sortBy('id')" class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-300">
                                 #
@@ -252,9 +254,9 @@ new class extends Component
                             </button>
                         </th>
                         <th class="px-4 py-3 text-center">
-                            <button wire:click="sortBy('total_units')" class="flex items-center justify-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-300">
-                                Units
-                                @if($sortField === 'total_units')
+                            <button wire:click="sortBy('bookings')" class="flex items-center justify-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-300">
+                                Bookings
+                                @if($sortField === 'bookings')
                                     <span class="text-xs">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                                 @endif
                             </button>
@@ -290,10 +292,7 @@ new class extends Component
                         </td>
                         <td class="whitespace-nowrap px-4 py-3 text-center">
                             <span class="inline-flex items-center gap-1 text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                                {{ number_format($tenant->total_units) }}
-                                @if($tenant->total_units > 0)
-                                    <span class="text-xs text-neutral-400">units</span>
-                                @endif
+                                {{ number_format($tenant->bookings->count()) }}
                             </span>
                         </td>
                         <td class="whitespace-nowrap px-4 py-3 text-center">

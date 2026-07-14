@@ -24,8 +24,7 @@ class NextOfKinFactory extends Factory
             'phone_number' => $this->faker->phoneNumber(),
             'email' => $this->faker->unique()->safeEmail(),
             'address' => $this->faker->address(),
-            'identification_number' => $this->faker->unique()->numerify('ID-########'),
-            'identification_type' => $this->faker->randomElement(['National_ID', 'Passport', 'Driver_License', 'Other']),
+            'nin' => $this->faker->unique()->numerify('ID-########'),
             'is_verified' => $this->faker->boolean(50), // 50% chance of being verified
         ];
     }

@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('units', function (Blueprint $table) {
+        Schema::create('properties', function (Blueprint $table) {
             $table->id();
             $table->foreignId('compound_id');
-            $table->foreignId('property_id');
+            $table->foreignId('category_id');
             $table->string('title');
             $table->text('description')->nullable();
             $table->double('amount', 15, 2);
@@ -35,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('units');
+        Schema::dropIfExists('properties');
     }
 };

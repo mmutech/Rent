@@ -1,9 +1,10 @@
 <?php
 
-use App\Models\Unit;
+use App\Models\Property;
 use Flux\Flux;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 new class extends Component
 {
@@ -11,10 +12,10 @@ new class extends Component
 
     public string $search = '';
     public string $status = '';
-    public string $sortField = 'title';
-    public string $sortDirection = 'asc';
+    public string $sortField = 'created_at';
+    public string $sortDirection = 'desc';
 
-    public ?Unit $selectedUnit = null;
+    public ?Property $selectedProperty = null;
 
     protected $queryString = [
         'search' => ['except' => ''],
@@ -22,6 +23,31 @@ new class extends Component
         'sortField' => ['except' => 'title'],
         'sortDirection' => ['except' => 'asc'],
     ];
+
+    public function mount()
+    {
+        if (!auth()->user()->hasPermissionTo('view-property')) {
+            abort(403);
+        }
+    }
+
+    public function getPropertiesProperty()
+    {
+        return Property::with(['compound', 'category'])
+            ->when($this->search, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('title', 'like', "%{$this->search}%")
+                        ->orWhere('amount', 'like', "%{$this->search}%");
+                });
+            })
+            ->when(
+                $this->status !== '',
+                fn ($query) => $query->where('status', $this->status)
+            )
+            ->orderBy($this->sortField, $this->sortDirection)
+            ->latest()
+            ->paginate(10);
+    }
 
     public function updatingSearch(): void
     {
@@ -43,24 +69,6 @@ new class extends Component
         }
     }
 
-    public function getUnitsProperty()
-    {
-        return Unit::with(['compound', 'property'])
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('title', 'like', "%{$this->search}%")
-                        ->orWhere('amount', 'like', "%{$this->search}%");
-                });
-            })
-            ->when(
-                $this->status !== '',
-                fn ($query) => $query->where('status', $this->status)
-            )
-            ->orderBy($this->sortField, $this->sortDirection)
-            ->latest()
-            ->paginate(10);
-    }
-
     public function clearFilters(): void
     {
         $this->reset('search', 'status', 'sortField', 'sortDirection');
@@ -69,35 +77,36 @@ new class extends Component
 
     public function confirmDelete(int $id): void
     {
-        $this->selectedUnit = Unit::with('properties')->findOrFail($id);
-        Flux::modal('delete-unit')->show();
+        $this->selectedProperty = Property::findOrFail($id);
+
+        Flux::modal('delete-property')->show();
     }
 
     public function delete(): void
     {
-        if (! $this->selectedUnit) {
+        if (! $this->selectedProperty) {
             return;
         }
 
-        if ($this->selectedUnit->properties()->exists()) {
+        if ($this->selectedProperty->booking()->exists()) {
             session()->flash(
                 'error',
-                'This unit contains properties and cannot be deleted.'
+                'This Property contains bookings and cannot be deleted.'
             );
 
-            Flux::modal('delete-unit')->close();
+            Flux::modal('delete-property')->close();
             return;
         }
 
-        $this->selectedUnit->delete();
-        Flux::modal('delete-unit')->close();
+        $this->selectedProperty->delete();
+        Flux::modal('delete-property')->close();
 
         session()->flash(
             'success',
-            'Unit deleted successfully.'
+            'Property deleted successfully.'
         );
 
-        $this->reset('selectedUnit');
+        $this->reset('selectedProperty');
         $this->resetPage();
     }
 };
@@ -112,7 +121,7 @@ new class extends Component
             <flux:heading size="xl" class="flex items-center gap-2">
                 Property
                 <span class="text-sm font-normal text-neutral-500 dark:text-neutral-400">
-                    ({{ $this->units->total() }})
+                    ({{ $this->properties->total() }})
                 </span>
             </flux:heading>
             <flux:text class="mt-1">
@@ -137,7 +146,7 @@ new class extends Component
                 <div>
                     <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Total Units</p>
                     <p class="mt-1 text-2xl font-semibold text-neutral-900 dark:text-white">
-                        {{ \App\Models\Unit::count() }}
+                        {{ \App\Models\Property::count() }}
                     </p>
                 </div>
                 <div class="rounded-full bg-blue-100 p-3 dark:bg-blue-900/30">
@@ -153,7 +162,7 @@ new class extends Component
                 <div>
                     <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Available</p>
                     <p class="mt-1 text-2xl font-semibold text-neutral-900 dark:text-white">
-                        {{ \App\Models\Unit::where('status', 'Available')->count() }}
+                        {{ \App\Models\Property::where('status', 'Available')->count() }}
                     </p>
                 </div>
                 <div class="rounded-full bg-green-100 p-3 dark:bg-green-900/30">
@@ -169,7 +178,7 @@ new class extends Component
                 <div>
                     <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Reserved</p>
                     <p class="mt-1 text-2xl font-semibold text-neutral-900 dark:text-white">
-                        {{ \App\Models\Unit::where('status', 'Reserved')->count() }}
+                        {{ \App\Models\Property::where('status', 'Reserved')->count() }}
                     </p>
                 </div>
                 <div class="rounded-full bg-red-100 p-3 dark:bg-red-900/30">
@@ -185,7 +194,7 @@ new class extends Component
                 <div>
                     <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Total Occupied</p>
                     <p class="mt-1 text-2xl font-semibold text-neutral-900 dark:text-white">
-                        {{ \App\Models\Unit::where('status', 'Occupied')->count() }}
+                        {{ \App\Models\Property::where('status', 'Occupied')->count() }}
                     </p>
                 </div>
                 <div class="rounded-full bg-purple-100 p-3 dark:bg-purple-900/30">
@@ -236,8 +245,8 @@ new class extends Component
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
                 <thead class="bg-neutral-50 dark:bg-neutral-800/50">
-                    <tr class="text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                        <th class="px-4 py-3">
+                    <tr class="text-left text-xs font-medium tracking-wider text-neutral-500 dark:text-neutral-400">
+                        <th class="px-4 py-3 text-center">
                             <button wire:click="sortBy('id')" class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-300">
                                 #
                                 @if($sortField === 'id')
@@ -245,15 +254,15 @@ new class extends Component
                                 @endif
                             </button>
                         </th>
-                        <th class="px-4 py-3">
+                        <th class="px-4 py-3 text-center">
                             <button wire:click="sortBy('compound_id')" class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-300">
-                                Type
+                                Compound
                                 @if($sortField === 'compound_id')
                                     <span class="text-xs">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                                 @endif
                             </button>
                         </th>
-                        <th class="px-4 py-3">
+                        <th class="px-4 py-3 text-center">
                             <button wire:click="sortBy('title')" class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-300">
                                 Title
                                 @if($sortField === 'title')
@@ -262,14 +271,6 @@ new class extends Component
                             </button>
                         </th>
                         <th class="px-4 py-3 text-center">
-                            <button wire:click="sortBy('bedrooms')" class="flex items-center justify-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-300">
-                                Bedrooms
-                                @if($sortField === 'bedrooms')
-                                    <span class="text-xs">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                                @endif
-                            </button>
-                        </th>
-                        <th class="px-4 py-3">
                             <button wire:click="sortBy('amount')" class="flex items-center gap-1 hover:text-neutral-700 dark:hover:text-neutral-300">
                                 Amount
                                 @if($sortField === 'amount')
@@ -283,7 +284,7 @@ new class extends Component
                 </thead>
 
                 <tbody class="divide-y divide-neutral-200 bg-white dark:divide-neutral-700 dark:bg-neutral-900/50">
-                    @forelse ($this->units as $unit)
+                    @forelse ($this->properties as $property)
                     <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
                         <td class="whitespace-nowrap px-4 py-3 text-sm text-neutral-500 dark:text-neutral-400">
                             {{ $loop->iteration }}
@@ -297,33 +298,25 @@ new class extends Component
                                 </div>
                                 <div>
                                     <div class="font-medium text-neutral-900 dark:text-white">
-                                        {{ $unit->compound?->name ?? 'N/A' }}
+                                        {{ $property->compound?->name ?? 'N/A' }}
                                     </div>
-                                    @if($unit->property?->name)
+                                    @if($property->category?->name)
                                         <div class="text-xs text-neutral-500 dark:text-neutral-400">
-                                            {{ $unit->property->name }}
+                                            {{ $property->category->name }}
                                         </div>
                                     @endif
                                 </div>
                             </div>
                         </td>
                         <td class="px-4 py-3 text-sm text-neutral-700 dark:text-neutral-300">
-                            {{ Str::limit($unit->title, 30) }}
-                        </td>
-                        <td class="whitespace-nowrap px-4 py-3 text-center">
-                            <span class="inline-flex items-center gap-1 text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                                {{ number_format($unit->bedrooms) }}
-                                @if($unit->bedrooms > 0)
-                                    <span class="text-xs text-neutral-400">Units</span>
-                                @endif
-                            </span>
+                            {{ Str::limit($property->title, 30) }}
                         </td>
                         <td class="px-4 py-3 text-sm text-neutral-700 dark:text-neutral-300">
-                            {{ number_format($unit->amount) }}
+                            {{ number_format($property->amount) }}
                         </td>
                         <td class="whitespace-nowrap px-4 py-3 text-center">
                             <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium 
-                                {{ match($unit->status) {
+                                {{ match($property->status) {
                                     'Available' => 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
                                     'Reserved' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
                                     'Occupied' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
@@ -331,7 +324,7 @@ new class extends Component
                                     default => 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
                                 } }}">
                                 <span class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full 
-                                    {{ match($unit->status) {
+                                    {{ match($property->status) {
                                         'Available' => 'bg-green-400',
                                         'Reserved' => 'bg-yellow-400',
                                         'Occupied' => 'bg-blue-400',
@@ -339,7 +332,7 @@ new class extends Component
                                         default => 'bg-gray-400',
                                     } }}">
                                 </span>
-                                {{ str_replace('_', ' ', $unit->status) }}
+                                {{ str_replace('_', ' ', $property->status) }}
                             </span>
                         </td>
                         <td class="whitespace-nowrap px-4 py-3 text-center">
@@ -347,17 +340,17 @@ new class extends Component
                                 <flux:button size="sm" icon="ellipsis-vertical" variant="ghost" />
 
                                 <flux:menu>
-                                    <flux:menu.item icon="eye" :href="route('property.show', $unit)">
+                                    <flux:menu.item icon="eye" :href="route('property.show', $property)">
                                         View Details
                                     </flux:menu.item>
-                                    <flux:menu.item icon="pencil-square" :href="route('property.edit', $unit)">
+                                    <flux:menu.item icon="pencil-square" :href="route('property.edit', $property)">
                                         Edit Property
                                     </flux:menu.item>
                                     <flux:menu.separator />
                                     <flux:menu.item 
                                         variant="danger" 
                                         icon="trash" 
-                                        wire:click="confirmDelete({{ $unit->id }})"
+                                        wire:click="confirmDelete({{ $property->id }})"
                                     >
                                         Delete Property
                                     </flux:menu.item>
@@ -373,7 +366,7 @@ new class extends Component
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                                     </svg>
                                     <p class="text-sm text-neutral-500 dark:text-neutral-400">
-                                        No units found matching your filters.
+                                        No property found matching your filters.
                                     </p>
                                     <flux:button variant="ghost" wire:click="clearFilters" size="sm">
                                         Clear filters
@@ -388,12 +381,12 @@ new class extends Component
 
         <!-- Pagination -->
         <div class="border-t border-neutral-200 px-4 py-3 dark:border-neutral-700">
-            {{ $this->units->links() }}
+            {{ $this->properties->links() }}
         </div>
     </div>
 
     <!-- Delete Modal -->
-    <flux:modal title="delete-unit" class="md:w-96">
+    <flux:modal name="delete-property" class="md:w-96">
         <div class="space-y-6">
             <div class="flex items-start gap-4">
                 <div class="flex-shrink-0 rounded-full bg-red-100 p-2 dark:bg-red-900/30">
@@ -403,11 +396,11 @@ new class extends Component
                 </div>
                 <div>
                     <flux:heading size="lg">
-                        Delete Unit
+                        Delete Property
                     </flux:heading>
                     <flux:text class="mt-2">
                         Are you sure you want to delete
-                        <strong class="text-neutral-900 dark:text-white">{{ $selectedUnit?->title }}</strong>?
+                        <strong class="text-neutral-900 dark:text-white">{{ $selectedProperty?->title }}</strong>?
                     </flux:text>
                     <div class="mt-2 rounded-lg bg-red-50 p-3 dark:bg-red-900/20">
                         <flux:text class="text-sm text-red-600 dark:text-red-400">
@@ -420,7 +413,7 @@ new class extends Component
             <div class="flex justify-end gap-2">
                 <flux:button
                     variant="ghost"
-                    x-on:click="$flux.modal('delete-unit').close()"
+                    x-on:click="$flux.modal('delete-property').close()"
                 >
                     Cancel
                 </flux:button>
@@ -432,7 +425,7 @@ new class extends Component
                     wire:loading.attr="disabled"
                 >
                     <span wire:loading.remove>
-                        Delete unit
+                        Delete Property
                     </span>
                     <span wire:loading>
                         Deleting...

@@ -1,18 +1,19 @@
 <?php
 
-use App\Models\Unit;
-use App\Models\Compound;
 use App\Models\Property;
+use App\Models\Compound;
+use App\Models\PropertyCategory;
 use App\Models\PropertyImage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 new class extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, AuthorizesRequests;
 
     public string $title = '';
     public ?string $description = null;
@@ -22,18 +23,20 @@ new class extends Component
     public ?int $kitchens = null;
     public ?int $living_rooms = null;
     public ?int $parking_spaces = null;
-    public string $status = 'available'; // Default status
+    public string $status = 'Available'; // Default status
 
     public ?int $compound_id = null;
-    public ?int $property_id = null;
+    public ?int $category_id = null;
 
     // Image fields
-    public $images = []; // For multiple image uploads
-    public $tempPrimaryImageIndex = 0; // Track which image is primary
+    public $images = [];
+    public $tempPrimaryImageIndex = 0;
+    public $maxImages = 10;
+    public $maxFileSize = 2048; // 2MB
 
     // For dropdowns
     public $compounds = [];
-    public $properties = [];
+    public $categories = [];
 
     protected function rules(): array
     {
@@ -46,11 +49,11 @@ new class extends Component
             'kitchens' => ['required', 'integer', 'min:0'],
             'living_rooms' => ['required', 'integer', 'min:0'],
             'parking_spaces' => ['required', 'integer', 'min:0'],
-            'status' => ['required', 'string', 'in:available,sold,rented,under_construction'],
-            'compound_id' => ['nullable', 'exists:compounds,id'],
-            'property_id' => ['nullable', 'exists:properties,id'],
-            'images.*' => ['nullable', 'image', 'max:2048'], // 1MB max per image
-            'images' => ['nullable', 'array', 'max:10'], // Max 10 images
+            'status' => ['required', 'string', 'in:Available,Occupied,Reserved,Under_Maintenance'],
+            'compound_id' => ['required', 'exists:compounds,id'],
+            'category_id' => ['required', 'exists:property_categories,id'],
+            'images' => ['required', 'array', 'min:1', 'max:10'], // ✅ At least 1 image required
+            'images.*' => ['image', 'max:' . $this->maxFileSize], // Max 10 images
         ];
     }
 
@@ -68,30 +71,42 @@ new class extends Component
             'parking_spaces.required' => 'Number of parking spaces is required.',
             'status.required' => 'Status is required.',
             'status.in' => 'Invalid status selected.',
+            'compound_id' => 'Compound is required',
             'compound_id.exists' => 'Selected compound does not exist.',
-            'property_id.exists' => 'Selected property does not exist.',
-            'images.*.image' => 'Each file must be an image.',
-            'images.*.max' => 'Each image must not exceed 1MB.',
+            'category_id' => 'Category is required',
+            'category_id.exists' => 'Selected property category does not exist.',
+            'images.required' => 'Please upload at least one image.',
+            'images.min' => 'Please upload at least one image.',
             'images.max' => 'You can upload a maximum of 10 images.',
+            'images.*.image' => 'Each file must be an image.',
+            'images.*.max' => 'Each image must not exceed 2MB.',
         ];
     }
 
-    public function createunit(): void
+    public function createProperty(): void
     {
         $validated = $this->validate();
+
+        $user = Auth::user();
+        $compound = Compound::find($validated['compound_id']);
         
+        if (!$user->hasRole('Admin') && $compound->created_by !== $user->id) {
+            session()->flash('error', 'You do not have permission to add properties to this compound.');
+            return;
+        }
+
         $validated['created_by'] = Auth::id();
 
         DB::transaction(function () use ($validated) {
-           $unit = Unit::create($validated);
+           $property = Property::create($validated);
 
             // Handle image uploads
             if (!empty($this->images)) {
                 foreach ($this->images as $index => $image) {
-                    $path = $image->store('properties/' . $unit->id, 'public');
+                    $path = $image->store('properties/' . $property->id, 'public');
                     
                     PropertyImage::create([
-                        'property_id' => $unit->id, // Assuming this links to unit
+                        'property_id' => $property->id, // Assuming this links to property
                         'image_path' => $path,
                         'is_primary' => ($index === $this->tempPrimaryImageIndex),
                     ]);
@@ -126,18 +141,22 @@ new class extends Component
     {
         $user = Auth::user();
         
+        if (!auth()->user()->hasPermissionTo('create-property')) {
+            abort(403);
+        }
+
         // Check if user has Admin role using Spatie
         if ($user->hasRole('Admin')) {
             // Admin sees all active compounds
             $this->compounds = Compound::where('is_active', true)->get();
-            $this->properties = Property::all();
+            $this->categories = PropertyCategory::all();
         } else {
             // Non-admin users see only their own records
             $this->compounds = Compound::where('is_active', true)
                 ->where('created_by', $user->id)
                 ->get();
             
-            $this->properties = Property::all();
+            $this->categories = PropertyCategory::all();
         }
     }
 };
@@ -145,7 +164,7 @@ new class extends Component
 
 <div class="flex h-full w-full flex-1 flex-col gap-4">
     <!-- Header -->
-    <div class="flex items-center justify-between rounded-xl border border-neutral-200 p-4 dark:border-neutral-700">
+    <div class="flex flex-col gap-4 rounded-xl border border-neutral-200 p-4 dark:border-neutral-700 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <flux:heading size="xl">New Property</flux:heading>
             <flux:text class="mt-1">
@@ -153,47 +172,47 @@ new class extends Component
             </flux:text>
         </div>
 
-        <flux:button :href="route('property.index')" variant="ghost" icon="arrow-left">
-            Back to Property
-        </flux:button>
+        <div class="flex items-center gap-2">
+            <flux:button :href="route('property.index')" variant="ghost" icon="arrow-left">
+                Back to Property
+            </flux:button>
+        </div>
     </div>
+
+    <!-- Flash Messages -->
+    <x-flash-message />
 
     <!-- Form -->
     <div class="flex flex-col gap-4 rounded-xl border border-neutral-200 p-4 dark:border-neutral-700">
         <flux:heading size="lg">Property Details</flux:heading>
 
-        <form wire:submit.prevent="createunit" class="flex flex-col gap-4">
+        <form wire:submit.prevent="createProperty" class="flex flex-col gap-4">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 rounded-lg border border-neutral-200 p-4 dark:border-neutral-700">
-                <div>
-                    <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Compound</label>
-                    <select wire:model.live="compound_id" class="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 dark:border-neutral-600 dark:bg-zinc-800">
-                        <option value="">None</option>
-                        @foreach($this->compounds as $compound)
-                            <option value="{{ $compound->id }}">{{ $compound->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                
+                <flux:select wire:model.live="compound_id" label="Compound">
+                    <option value="">None</option>
+                    @foreach($this->compounds as $compound)
+                        <option value="{{ $compound->id }}">{{ $compound->name }}</option>
+                    @endforeach
+                </flux:select>
 
-                <div>
-                    <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Property Type</label>
-                    <select wire:model.live="property_id" class="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 dark:border-neutral-600 dark:bg-zinc-800">
-                        <option value="">None</option>
-                        @foreach($this->properties as $property)
-                            <option value="{{ $property->id }}">{{ $property->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                <flux:select wire:model.live="category_id" label="Property Category">
+                    <option value="">None</option>
+                   @foreach($this->categories as $category)
+                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                    @endforeach
+                </flux:select>
             </div>
+
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-700">
                 
                 <flux:input wire:model.live="title" label="Title" placeholder="Enter property title" />
-                <flux:input wire:model.live="amount" label="Amount" placeholder="Enter property amount" type="number" step="0.01" />
-                
                 <flux:input wire:model.live="bedrooms" label="Bedrooms" placeholder="Enter number of bedrooms" type="number" />
                 <flux:input wire:model.live="bathrooms" label="Bathrooms" placeholder="Enter number of bathrooms" type="number" />
                 <flux:input wire:model.live="kitchens" label="Kitchens" placeholder="Enter number of kitchens" type="number" />
                 <flux:input wire:model.live="living_rooms" label="Living Rooms" placeholder="Enter number of living rooms" type="number" />
                 <flux:input wire:model.live="parking_spaces" label="Parking Spaces" placeholder="Enter number of parking spaces" type="number" />
+                <flux:input wire:model.live="amount" label="Amount" placeholder="Enter property amount" type="number" step="0.01" />
             </div>
 
             <div class="grid grid-cols-1 rounded-lg border border-neutral-200 p-4 dark:border-neutral-700">
@@ -203,18 +222,15 @@ new class extends Component
             <!-- Images Section -->
             <div class="rounded-lg border border-neutral-200 p-4 dark:border-neutral-700">
                 <div class="mb-4">
-                    <flux:heading size="md">Unit Images</flux:heading>
+                    <flux:heading size="md">Property Images</flux:heading>
                     <flux:text class="mt-1 text-sm">
                         Upload up to 10 images. First image will be primary by default (max 5MB each).
                     </flux:text>
                 </div>
 
                 <!-- File Input -->
-                <div class="mb-4">
-                    <input type="file" wire:model.live="images" multiple accept="image/*" 
-                           class="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 dark:border-neutral-600 dark:bg-zinc-800" />
-                    @error('images.*') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
-                    @error('images') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
+                <div class="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 dark:border-neutral-600 dark:bg-zinc-800">
+                    <flux:input wire:model.live="images" type="file" multiple accept="image/*" />
                 </div>
 
                 <!-- Image Previews -->

@@ -12,3 +12,4 @@ require __DIR__.'/settings.php';
 require __DIR__.'/compound.php';
 require __DIR__.'/property.php';
 require __DIR__.'/tenant.php';
+require __DIR__.'/booking.php';

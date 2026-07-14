@@ -15,11 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('booking_reference')->unique();
             $table->foreignId('user_id');
-            $table->foreignId('unit_id');
+            $table->foreignId('property_id');
             $table->foreignId('agent_id')->nullable();
             $table->date('start_date');
             $table->date('end_date');
             $table->decimal('total_price', 8, 2);
+            $table->text('notes')->nullable();
             $table->enum('status', ['Pending', 'Confirmed', 'Cancelled'])->default('Pending');
             $table->timestamps();
         });

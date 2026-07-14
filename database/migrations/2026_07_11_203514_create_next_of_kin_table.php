@@ -19,8 +19,7 @@ return new class extends Migration
             $table->string('phone_number');
             $table->string('email')->nullable();
             $table->string('address')->nullable();
-            $table->string('identification_number');
-            $table->enum('identification_type', ['National_ID', 'Passport', 'Driver_License', 'Other']);
+            $table->string('nin');
             $table->boolean('is_verified')->default(false);
             $table->timestamps();
         });

@@ -17,8 +17,7 @@ class NextOfKin extends Model
         'phone_number',
         'email',
         'address',
-        'identification_number',
-        'identification_type',
+        'nin',
         'is_verified',
     ];
 

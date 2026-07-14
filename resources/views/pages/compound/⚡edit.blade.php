@@ -4,6 +4,7 @@ use Livewire\Component;
 use App\Models\Compound;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 new class extends Component
 {
@@ -16,7 +17,7 @@ new class extends Component
     public ?string $state = null;
     public ?string $zip_code = null;
     
-    public int $total_units = 0;
+    public int $total_properties = 0;
     
     public ?string $description = null;
     
@@ -33,6 +34,10 @@ new class extends Component
 
     public function mount(Compound $compound): void
     {
+        if (!auth()->user()->hasPermissionTo('update-compound')) {
+            abort(403);
+        }
+
         $this->compound = $compound;
         
         // Fill the form with existing data
@@ -42,7 +47,7 @@ new class extends Component
         $this->city = $compound->city;
         $this->state = $compound->state;
         $this->zip_code = $compound->zip_code;
-        $this->total_units = $compound->total_units;
+        $this->total_properties = $compound->total_properties;
         $this->description = $compound->description;
         $this->google_map_url = $compound->google_map_url;
         $this->latitude = $compound->latitude;
@@ -70,7 +75,7 @@ new class extends Component
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
 
-            'total_units' => ['required', 'integer', 'min:0'],
+            'total_properties' => ['required', 'integer', 'min:0'],
             
             'fence_walled' => ['boolean'],
             'street_lights' => ['boolean'],
@@ -113,7 +118,7 @@ new class extends Component
 
 <div class="flex h-full w-full flex-1 flex-col gap-4">
     <!-- Header -->
-    <div class="flex items-center justify-between rounded-xl border border-neutral-200 p-4 dark:border-neutral-700">
+    <div class="flex flex-col gap-4 rounded-xl border border-neutral-200 p-4 dark:border-neutral-700 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <flux:heading size="xl">Edit Compound</flux:heading>
             <flux:text class="mt-1">
@@ -121,9 +126,11 @@ new class extends Component
             </flux:text>
         </div>
 
-        <flux:button :href="route('compound.index')" variant="ghost" icon="arrow-left">
-            Back to Compounds
-        </flux:button>
+        <div class="flex items-center gap-2">
+            <flux:button :href="route('compound.index')" variant="ghost" icon="arrow-left">
+                Back to Compounds
+            </flux:button>
+        </div>
     </div>
 
     <!-- Form -->
@@ -140,7 +147,7 @@ new class extends Component
                 <flux:input wire:model="city" label="City" placeholder="Enter compound city" />
                 <flux:input wire:model="state" label="State" placeholder="Enter compound state" />
                 <flux:input wire:model="zip_code" label="Zip Code" placeholder="Enter compound zip code" />
-                <flux:input wire:model="total_units" label="Total Units" placeholder="Enter total units" type="number" />
+                <flux:input wire:model="total_properties" label="Total Units" placeholder="Enter total units" type="number" />
             </div>
 
             <div class="grid grid-cols-1 rounded-lg border border-neutral-200 p-4 dark:border-neutral-700">

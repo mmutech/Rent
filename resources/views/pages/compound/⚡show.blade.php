@@ -2,6 +2,7 @@
 
 use Livewire\Component;
 use App\Models\Compound;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 new class extends Component
 {
@@ -9,6 +10,10 @@ new class extends Component
 
     public function mount(Compound $compound): void
     {
+        if (!auth()->user()->hasPermissionTo('view-compound')) {
+            abort(403);
+        }
+
         $this->compound = $compound;
     }
 };
@@ -16,7 +21,7 @@ new class extends Component
 
 <div class="flex h-full w-full flex-1 flex-col gap-6">
     <!-- Header -->
-    <div class="flex flex-col gap-4 rounded-xl border border-neutral-200 p-6 dark:border-neutral-700 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex flex-col gap-4 rounded-xl border border-neutral-200 p-4 dark:border-neutral-700 sm:flex-row sm:items-center sm:justify-between">
         <div class="space-y-1">
             <flux:heading size="xl" class="flex items-center gap-2">
                 {{ $compound->name }}
@@ -76,7 +81,7 @@ new class extends Component
                 <div>
                     <p class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Total Units</p>
                     <p class="mt-1 text-2xl font-semibold text-neutral-900 dark:text-white">
-                        {{ number_format($compound->total_units) }}
+                        {{ number_format($compound->total_properties) }}
                     </p>
                 </div>
                 <div class="rounded-full bg-green-100 p-3 dark:bg-green-900/30">

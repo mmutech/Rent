@@ -60,4 +60,14 @@ class User extends Authenticatable implements PasskeyUser
             ? Str::substr($initials, 0, 1).Str::substr($initials, -1)
             : $initials;
     }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class, 'agent_id');
+    }
+
+    public function nextOfKin()
+    {
+        return $this->hasOne(NextOfKin::class, 'user_id');
+    }
 }

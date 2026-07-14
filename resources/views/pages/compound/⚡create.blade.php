@@ -3,6 +3,7 @@
 use App\Models\Compound;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 new class extends Component
 {
@@ -14,7 +15,7 @@ new class extends Component
     public ?string $zip_code = null;
 
     // Consider removing these if they will be calculated automatically
-    public int $total_units = 0;
+    public int $total_properties = 0;
 
     public ?string $description = null;
 
@@ -44,7 +45,7 @@ new class extends Component
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             
-            'total_units' => ['required', 'integer', 'min:0'],
+            'total_properties' => ['required', 'integer', 'min:0'],
 
             'fence_walled' => ['boolean'],
             'street_lights' => ['boolean'],
@@ -67,6 +68,13 @@ new class extends Component
         ];
     }
 
+    public function mount()
+    {
+        if (!auth()->user()->hasPermissionTo('create-compound')) {
+            abort(403);
+        }
+    }
+
     public function createCompound(): void
     {
         $validated = $this->validate();
@@ -86,7 +94,7 @@ new class extends Component
 
 <div class="flex h-full w-full flex-1 flex-col gap-4">
     <!-- Header -->
-    <div class="flex items-center justify-between rounded-xl border border-neutral-200 p-4 dark:border-neutral-700">
+    <div class="flex flex-col gap-4 rounded-xl border border-neutral-200 p-4 dark:border-neutral-700 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <flux:heading size="xl">New Compound</flux:heading>
             <flux:text class="mt-1">
@@ -94,9 +102,11 @@ new class extends Component
             </flux:text>
         </div>
 
-        <flux:button :href="route('compound.index')" variant="ghost" icon="arrow-left">
-            Back to Compounds
-        </flux:button>
+        <div class="flex items-center gap-2">
+            <flux:button :href="route('compound.index')" variant="ghost" icon="arrow-left">
+                Back to Compounds
+            </flux:button>
+        </div>
     </div>
 
     <!-- Form -->
@@ -111,7 +121,7 @@ new class extends Component
                 <flux:input wire:model.live="city" label="City" placeholder="Enter compound city" />
                 <flux:input wire:model.live="state" label="State" placeholder="Enter compound state" />
                 <flux:input wire:model.live="zip_code" label="Zip Code" placeholder="Enter compound zip code" />
-                <flux:input wire:model.live="total_units" label="Total Units" placeholder="Enter total units" type="number" />
+                <flux:input wire:model.live="total_properties" label="Total Properties" placeholder="Enter total properties" type="number" />
             </div>
 
             <div class="grid grid-cols-1 rounded-lg border border-neutral-200 p-4 dark:border-neutral-700">
