@@ -3,6 +3,7 @@
 use App\Models\Booking;
 use App\Models\User;
 use App\Models\Property;
+use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
@@ -24,6 +25,8 @@ new class extends Component
     public $totalPaid = 0;
     public $remainingBalance = 0;
     public $paymentStatus = 'Unpaid';
+
+    public ?Booking $selectedBooking = null;
 
     public function mount(Booking $booking)
     {
@@ -263,6 +266,68 @@ new class extends Component
             'Overdue' => 'exclamation-triangle',
             default => 'question-mark-circle',
         };
+    }
+
+    /**
+     * Confirm Booking
+     */
+    public function confirmBooking(int $id): void
+    {
+        $this->selectedBooking = Booking::findOrFail($id);
+        Flux::modal('confirm-booking')->show();
+    }
+
+    public function confirm(): void
+    {
+        if (! $this->selectedBooking) {
+            return;
+        }
+
+        $this->selectedBooking->update([
+            'status' => 'Confirmed',
+            'confirmed_at' => now(),
+            'updated_by' => auth()->id(),
+        ]);
+
+        Flux::modal('confirm-booking')->close();
+
+        session()->flash(
+            'success',
+            'Booking Confirm successfully.'
+        );
+
+        $this->reset('selectedBooking');
+    }
+
+    /**
+     * Cancel Booking
+     */
+    public function confirmCancel(int $id): void
+    {
+        $this->selectedBooking = Booking::findOrFail($id);
+        Flux::modal('cancel-booking')->show();
+    }
+
+    public function cancel(): void
+    {
+        if (! $this->selectedBooking) {
+            return;
+        }
+
+        $this->selectedBooking->update([
+            'status' => 'Cancelled',
+            'cancelled_at' => now(),
+            'updated_by' => auth()->id(),
+        ]);
+
+        Flux::modal('cancel-booking')->close();
+
+        session()->flash(
+            'success',
+            'Booking Cancel successfully.'
+        );
+
+        $this->reset('selectedBooking');
     }
 };
 ?>
@@ -630,19 +695,13 @@ new class extends Component
                 
                 <div class="flex flex-col gap-2">
                     @if(in_array($booking->status, ['Pending', 'Confirmed']))
-                        <flux:button variant="primary" icon="check" size="sm" class="w-full">
+                        <flux:button variant="primary" icon="check" size="sm" class="w-full"  wire:click="confirmBooking({{ $booking->id }})">
                             Confirm Booking
                         </flux:button>
                     @endif
                     
-                    @if($booking->status === 'Active')
-                        <flux:button variant="primary" icon="check-circle" size="sm" class="w-full">
-                            Mark as Completed
-                        </flux:button>
-                    @endif
-                    
                     @if(in_array($booking->status, ['Pending', 'Confirmed', 'Active']))
-                        <flux:button variant="danger" icon="x-circle" size="sm" class="w-full">
+                        <flux:button variant="danger" icon="x-circle" size="sm" class="w-full" wire:click="confirmCancel({{ $booking->id }})">
                             Cancel Booking
                         </flux:button>
                     @endif
@@ -660,4 +719,104 @@ new class extends Component
             </div>
         </div>
     </div>
+
+    <!-- Confirm Modal -->
+    <flux:modal name="confirm-booking" class="md:w-96">
+        <div class="space-y-6">
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 rounded-full bg-red-100 p-2 dark:bg-red-900/30">
+                    <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <div>
+                    <flux:heading size="lg">
+                        Confirm Booking
+                    </flux:heading>
+                    <flux:text class="mt-2">
+                        Are you sure you want to confirm
+                        <strong class="text-neutral-900 dark:text-white">{{ $selectedBooking?->name }}</strong>?
+                    </flux:text>
+                    <div class="mt-2 rounded-lg bg-red-50 p-3 dark:bg-red-900/20">
+                        <flux:text class="text-sm text-red-600 dark:text-red-400">
+                            ⚠️ This action cannot be undone.
+                        </flux:text>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <flux:button
+                    variant="ghost"
+                    x-on:click="$flux.modal('confirm-booking').close()"
+                >
+                    Cancel
+                </flux:button>
+
+                <flux:button
+                    variant="primary"
+                    icon="check"
+                    wire:click="confirm"
+                    wire:loading.attr="disabled"
+                >
+                    <span wire:loading.remove>
+                        Confirm Booking
+                    </span>
+                    <span wire:loading>
+                        Confirming...
+                    </span>
+                </flux:button>
+            </div>
+        </div>
+    </flux:modal>
+
+    <!-- Cancel Modal -->
+    <flux:modal name="cancel-booking" class="md:w-96">
+        <div class="space-y-6">
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 rounded-full bg-red-100 p-2 dark:bg-red-900/30">
+                    <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <div>
+                    <flux:heading size="lg">
+                        Cancel Booking
+                    </flux:heading>
+                    <flux:text class="mt-2">
+                        Are you sure you want to cancel
+                        <strong class="text-neutral-900 dark:text-white">{{ $selectedBooking?->name }}</strong>?
+                    </flux:text>
+                    <div class="mt-2 rounded-lg bg-red-50 p-3 dark:bg-red-900/20">
+                        <flux:text class="text-sm text-red-600 dark:text-red-400">
+                            ⚠️ This action cannot be undone.
+                        </flux:text>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <flux:button
+                    variant="ghost"
+                    x-on:click="$flux.modal('cancel-booking').close()"
+                >
+                    Cancel
+                </flux:button>
+
+                <flux:button
+                    variant="danger"
+                    icon="trash"
+                    wire:click="cancel"
+                    wire:loading.attr="disabled"
+                >
+                    <span wire:loading.remove>
+                        Cancel Booking
+                    </span>
+                    <span wire:loading>
+                        Canceling...
+                    </span>
+                </flux:button>
+            </div>
+        </div>
+    </flux:modal>
 </div>

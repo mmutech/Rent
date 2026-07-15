@@ -22,6 +22,9 @@ return new class extends Migration
             $table->decimal('total_price', 8, 2);
             $table->text('notes')->nullable();
             $table->enum('status', ['Pending', 'Confirmed', 'Cancelled'])->default('Pending');
+            $table->date('confirmed_at')->nullable();
+            $table->date('cancelled_at')->nullable();
+            $table->integer('updated_by')->nullable();
             $table->timestamps();
         });
     }

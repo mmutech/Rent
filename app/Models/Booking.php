@@ -43,6 +43,9 @@ class Booking extends Model
         'total_price',
         'notes',
         'status',
+        'confirmed_at',
+        'cancelled_at',
+        'updated_by'
     ];
 
     public function user()
